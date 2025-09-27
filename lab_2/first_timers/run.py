@@ -40,7 +40,7 @@ def update_db(all_issues, db_path):
 @click.option('--max-tweet-len',
               default=FT.MAX_TWEETS_LEN,
               help=f'Maximum tweet length (default: {FT.MAX_TWEETS_LEN}).')
-def run(only_save, db_path, create, creds_path, debug):
+def run(only_save, db_path, create, creds_path, debug, days_old, max_tweet_len):
     """The function that gets repetitively called via cron.
     - Updates the DB file with new issues
     - Sends out corresponding tweets for those new issues
@@ -65,9 +65,11 @@ def run(only_save, db_path, create, creds_path, debug):
     new_issues = []
     for label in issue_labels:
         try:
-            new_issues.append(FT.get_first_timer_issues(label))
+            # Используем параметр days_old вместо глобальной константы
+            issues = FT.get_first_timer_issues(label, days_old=days_old)
+            new_issues.extend(issues)
         except requests.HTTPError:
-            warnings.warn('Rate limit reached getting languages')
+            warnings.warn('Rate limit reached getting issues')
 
     fresh_issues = FT.get_fresh(old_issues, new_issues)
     all_issues = fresh_issues + old_issues
@@ -87,7 +89,8 @@ def run(only_save, db_path, create, creds_path, debug):
             for issue in fresh_issues:
                 click.secho('\t URL: ' + issue['url'], fg='blue')
 
-            tweets = FT.tweet_issues(fresh_issues, creds, debug)
+            # Передаем max_tweet_len в функцию твиттинга
+            tweets = FT.tweet_issues(fresh_issues, creds, debug, max_tweet_len)
 
             for tweet in tweets:
                 if tweet['error'] is None:
