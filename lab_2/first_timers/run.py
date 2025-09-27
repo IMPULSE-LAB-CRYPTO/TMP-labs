@@ -34,6 +34,12 @@ def update_db(all_issues, db_path):
 @click.option('--debug',
               is_flag=True,
               help='Run in debug mode (does not tweet).')
+@click.option('--days-old',
+              default=FT.DAYS_OLD,
+              help=f'Maximum age of issues in days (default: {FT.DAYS_OLD}).')
+@click.option('--max-tweet-len',
+              default=FT.MAX_TWEETS_LEN,
+              help=f'Maximum tweet length (default: {FT.MAX_TWEETS_LEN}).')
 def run(only_save, db_path, create, creds_path, debug):
     """The function that gets repetitively called via cron.
     - Updates the DB file with new issues
