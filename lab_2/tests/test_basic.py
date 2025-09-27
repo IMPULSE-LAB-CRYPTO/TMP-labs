@@ -1,8 +1,13 @@
-
 # attribution:
 # https://containersolutions.github.io/runbooks/posts/python/module-has-no-attribute/#step-2
-from ..first_timers import first_timers
+import os
+import sys
 import json
+
+# Добавляем путь к модулю для корректного импорта
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+
+from ..first_timers import first_timers
 
 
 example_res = json.load(open('data/example.json', 'r'))
