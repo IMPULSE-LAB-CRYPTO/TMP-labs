@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import re
 from datetime import datetime
 import requests
@@ -17,6 +18,7 @@ FIRST_ISSUE_QUERY_URL = GITHUB_API_BASE + '?q=label:"{}"+is:issue+is:open&sort=u
 TWITTER_SHORT_URL_LENGTH = 30
 
 
+# Logging helper function
 def log_info(message):
     logging.info(message)
 
@@ -56,7 +58,7 @@ def humanize_url(api_url: str) -> str:
         return f'https://github.com/{user}/{repo}/issues/{issue_num}'
 
 
-def get_first_timer_issues(issue_label: str) -> list:
+def get_first_timer_issues(issue_label: str, days_old: int = DAYS_OLD) -> List[Dict[str, Any]]:
     """Fetches the first page of issues with the label first-timers-label
     which are still open.
     """
@@ -64,14 +66,14 @@ def get_first_timer_issues(issue_label: str) -> list:
     res.raise_for_status()
 
     items = [item for item in res.json()['items']
-            if check_days_passed(item['created_at'], DAYS_OLD)]
+             if check_days_passed(item['created_at'], days_old)]
 
     return items
 
 
 def check_days_passed(date_created: str, days: int) -> bool:
     created_at = datetime.strptime(date_created, "%Y-%m-%dT%H:%M:%SZ")
-    return (datetime.now() - created_at).days <= days
+    return (datetime.now() - created_at).days < days
 
 
 def add_repo_languages(issues: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
@@ -94,7 +96,7 @@ def add_repo_languages(issues: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     return issues
 
 
-def get_fresh(old_issue_list, new_issue_list):
+def get_fresh(old_issue_list: List[Dict[str, Any]], new_issue_list: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """Returns which issues are not present in the old list of issues."""
     old_urls = {x['url'] for x in old_issue_list}
     return [x for x in new_issue_list if x['url'] not in old_urls]
@@ -174,7 +176,7 @@ def tweet_issues(issues: List[Dict[str, Any]], creds: Dict[str, str], debug: boo
     return tweets
 
 
-def limit_issues(issues, limit_len=100000):
+def limit_issues(issues: List[Dict[str, Any]], limit_len: int = 100000) -> List[Dict[str, Any]]:
     """Limit the number of issues saved in our DB."""
     sorted_issues = sorted(issues, key=lambda x: x['updated_at'], reverse=True)
     return sorted_issues[:limit_len]
