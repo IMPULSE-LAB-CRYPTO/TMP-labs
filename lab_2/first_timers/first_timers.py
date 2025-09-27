@@ -100,7 +100,8 @@ def get_fresh(old_issue_list, new_issue_list):
     return [x for x in new_issue_list if x['url'] not in old_urls]
 
 
-def tweet_issues(issues, creds, debug=False):
+def tweet_issues(issues: List[Dict[str, Any]], creds: Dict[str, str], debug: bool = False,
+                 max_tweet_len: int = MAX_TWEETS_LEN) -> List[Dict[str, Any]]:
     """Takes a list of issues and credentials and tweets through the account
     associated with the credentials.
     Also takes a parameter 'debug', which can prevent actual tweeting.
@@ -113,47 +114,44 @@ def tweet_issues(issues, creds, debug=False):
     auth.set_access_token(creds['Access Token'], creds['Access Token Secret'])
     api = tweepy.API(auth)
 
-    # This results in an API call to /help/configuration
-    # conf = api.configuration()
+    # Получаем актуальную длину коротких URL из Twitter API
+    try:
+        conf = api.configuration()
+        url_len = conf['short_url_length_https']
+    except Exception as e:
+        log_warning(f'Could not get Twitter configuration, using default: {e}')
+        url_len = TWITTER_SHORT_URL_LENGTH
 
-    # url_len = conf['short_url_length_https']
-    url_len = 30
-    hashTags = u"#github"
+    base_hashtags = u"#github"
 
     # 1 space with URL and 1 space before hashtags.
-    allowed_title_len = MAX_TWEETS_LEN - (url_len + 1) - (len(hashTags) + 1)
+    allowed_title_len = max_tweet_len - (url_len + 1) - (len(base_hashtags) + 1)
 
     tweets = []
 
     for issue in issues:
-        # Not encoding here because Twitter treats code points as 1 character.
-        language_hashTags = ''
+        # Для каждого issue создаем копию хештегов
+        current_hashtags = base_hashtags
         title = issue['title']
 
         if len(title) > allowed_title_len:
-            title = title[: allowed_title_len - 1] + ellipse
+            title = title[: allowed_title_len - 1] + ELLIPSIS
         else:
-            if 'languages' in issue:
-                language_hashTags = ''.join(
-                    ' #{}'.format(lang) for lang in issue['languages']
+            if 'languages' in issue and issue['languages']:
+                language_hashtags = ''.join(
+                    f' #{lang}' for lang in issue['languages']
                 )
-                hashTags = hashTags + language_hashTags
+                current_hashtags += language_hashtags
 
-            max_hashtags_len = MAX_TWEETS_LEN - \
-                (url_len + 1) - (len(title) + 1)
+            max_hashtags_len = max_tweet_len - (url_len + 1) - (len(title) + 1)
 
-            if len(hashTags) > max_hashtags_len:
-                hashTags = hashTags[:max_hashtags_len - 1] + ellipse
+            if len(current_hashtags) > max_hashtags_len:
+                current_hashtags = current_hashtags[:max_hashtags_len - 1] + ELLIPSIS
 
         url = humanize_url(issue['url'])
 
         try:
-            # Encoding here because .format will fail with Unicode characters.
-            tweet = '{title} {url} {tags}'.format(
-                title=title,
-                url=url,
-                tags=hashTags
-            )
+            tweet = f'{title} {url} {current_hashtags}'
 
             if not debug:
                 api.update_status(tweet)
@@ -163,15 +161,15 @@ def tweet_issues(issues, creds, debug=False):
                 'tweet': tweet
             })
 
-            log_info('Tweeted issue: {}'.format(issue['title']))
+            log_info(f'Tweeted issue: {issue["title"]}')
         except Exception as e:
             tweets.append({
                 'error': e,
                 'tweet': tweet
             })
 
-            log_error('Error tweeting issue: {}'.format(issue['title']))
-            log_error('Error message: {}'.format(str(e)))
+            log_error(f'Error tweeting issue: {issue["title"]}')
+            log_error(f'Error message: {str(e)}')
 
     return tweets
 
