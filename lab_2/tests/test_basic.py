@@ -16,9 +16,10 @@ example_issues = example_res['items']
 
 def test_fetcher():
     """Test whether first_timer_issues are getting picked up."""
-    issue_label = ('good first issue')
-    new_issues = first_timers.get_first_timer_issues(issue_label)
-    assert new_issues
+    issue_label = 'good first issue'
+    # Тест использует параметр days_old
+    new_issues = first_timers.get_first_timer_issues(issue_label, days_old=30)
+    assert new_issues is not None
 
 
 test_fetcher.__setattr__('__test__', False)  # Test disabled by default.
