@@ -74,19 +74,23 @@ def check_days_passed(date_created: str, days: int) -> bool:
     return (datetime.now() - created_at).days <= days
 
 
-def add_repo_languages(issues):
+def add_repo_languages(issues: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """Adds the repo languages to the issues list."""
     for issue in issues:
+        # Инициализируем пустой список языков на случай ошибки
+        issue.setdefault('languages', {})
+
         query_languages = issue['repository_url'] + '/languages'
         res = requests.get(query_languages)
         if res.status_code == 403:
             log_warning('Rate limit reached getting languages')
-            return issues
+            # Продолжаем обработку, но без языков для всех issue
+            continue
         if res.ok:
             issue['languages'] = res.json()
         else:
-            log_warning('Could not handle response: ' +
-                          str(res) + ' from the API.')
+            log_warning(f'Could not handle response: {res.status_code} from the API. URL: {query_languages}')
+            # Оставляем пустой словарь языков
     return issues
 
 
