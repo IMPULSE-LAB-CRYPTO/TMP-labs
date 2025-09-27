@@ -31,13 +31,29 @@ def log_error(message):
 
 def humanize_url(api_url: str) -> str:
     """Make an API endpoint to a Human endpoint."""
-    match = re.match(
-        'https://api.github.com/repos/(.*)/(.*)/issues/([0-9]*)', api_url)
-    if not match:
-        raise ValueError(f'Format of API URLs has changed: {api_url}')
-    user, repo, issue_num = match.group(1, 2, 3)
+    # Более надежный способ через разбор URL вместо регулярки
+    try:
+        # Разбираем URL на компоненты
+        from urllib.parse import urlparse
+        parsed_url = urlparse(api_url)
 
-    return f'https://github.com/{user}/{repo}/issues/{issue_num}'
+        # Извлекаем путь и разбиваем на части
+        path_parts = parsed_url.path.strip('/').split('/')
+
+        # Ожидаемый формат: /repos/owner/repo/issues/number
+        if len(path_parts) >= 5 and path_parts[0] == 'repos' and path_parts[3] == 'issues':
+            user, repo, issue_num = path_parts[1], path_parts[2], path_parts[4]
+            return f'https://github.com/{user}/{repo}/issues/{issue_num}'
+        else:
+            raise ValueError(f'Unexpected API URL format: {api_url}')
+    except Exception as e:
+        # Fallback на регулярное выражение для обратной совместимости
+        match = re.match(
+            r'https://api\.github\.com/repos/([^/]+)/([^/]+)/issues/([0-9]+)', api_url)
+        if not match:
+            raise ValueError(f'Format of API URLs has changed: {api_url}')
+        user, repo, issue_num = match.group(1, 2, 3)
+        return f'https://github.com/{user}/{repo}/issues/{issue_num}'
 
 
 def get_first_timer_issues(issue_label: str) -> list:
