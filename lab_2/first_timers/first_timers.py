@@ -1,9 +1,9 @@
-# -*- coding: utf-8 -*-
 import re
 from datetime import datetime
 import requests
 import tweepy
 import logging
+from typing import List, Dict, Any, Optional
 
 # Set up logging
 logging.basicConfig(filename='app.log', level=logging.INFO)
@@ -11,17 +11,19 @@ logging.basicConfig(filename='app.log', level=logging.INFO)
 
 DAYS_OLD = 15
 MAX_TWEETS_LEN = 280
+ELLIPSIS = u'…'
+GITHUB_API_BASE = 'https://api.github.com/search/issues'
+FIRST_ISSUE_QUERY_URL = GITHUB_API_BASE + '?q=label:"{}"+is:issue+is:open&sort=updated&order=desc'
+TWITTER_SHORT_URL_LENGTH = 30
 
-ellipse = u'…'
-api = 'https://api.github.com/search/issues'
-FIRST_ISSUE_QUERY_URL = api + '?q=label:"{}"+is:issue+is:open&sort=updated&order=desc'
 
-# Logging helper function
 def log_info(message):
     logging.info(message)
 
+
 def log_warning(message):
     logging.warning(message)
+
 
 def log_error(message):
     logging.error(message)
