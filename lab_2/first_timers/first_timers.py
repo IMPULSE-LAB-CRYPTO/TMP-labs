@@ -53,7 +53,7 @@ def get_first_timer_issues(issue_label: str) -> list:
 
 def check_days_passed(date_created: str, days: int) -> bool:
     created_at = datetime.strptime(date_created, "%Y-%m-%dT%H:%M:%SZ")
-    return (datetime.now() - created_at).days < days
+    return (datetime.now() - created_at).days <= days
 
 
 def add_repo_languages(issues):
