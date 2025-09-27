@@ -39,3 +39,20 @@ def test_humanize_url():
     api_url = "https://api.github.com/repos/tidusjar/NZBDash/issues/53"
     human_url = 'https://github.com/tidusjar/NZBDash/issues/53'
     assert first_timers.humanize_url(api_url) == human_url
+
+
+def test_humanize_url_with_api_version():
+    """Test humanize_url with versioned API endpoint."""
+    api_url = "https://api.github.com/v3/repos/tidusjar/NZBDash/issues/53"
+    human_url = 'https://github.com/tidusjar/NZBDash/issues/53'
+    assert first_timers.humanize_url(api_url) == human_url
+
+
+def test_humanize_url_invalid():
+    """Test humanize_url with invalid URL."""
+    api_url = "https://invalid-url.com/repos/test/issues/1"
+    try:
+        first_timers.humanize_url(api_url)
+        assert False, "Should have raised ValueError"
+    except ValueError:
+        assert True  # Ожидаемое поведение
